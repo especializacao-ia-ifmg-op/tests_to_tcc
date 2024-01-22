@@ -214,14 +214,11 @@ def slideWindowMulti(train, test, n_lags, n_var):
     X_test = []
     y_test = []
 
-    start = int(n_var*n_lags)
-    for i in range(n_lags, len(train), n_var):
-    # for i in range(start, len(train), n_var):
-        X_train.append(train[i-n_lags:i])
+    for i in range((n_var*n_lags), len(train)-n_var+1, n_var):
+        X_train.append(train[i-(n_var*n_lags):i])
         y_train.append(train[i+n_var-1])
-    for i in range(n_lags, len(test), n_var):
-    # for i in range(start, len(train), n_var):
-        X_test.append(test[i-n_lags:i])
+    for i in range((n_var*n_lags), len(test)-n_var+1, n_var):
+        X_test.append(test[i-(n_var*n_lags):i])
         y_test.append(test[i+n_var-1])
     X_train, y_train = np.array(X_train), np.array(y_train)
     X_train = np.reshape(X_train,(X_train.shape[0],X_train.shape[1],1))
@@ -385,32 +382,6 @@ def slideWindow_val(series, n_lags):
     X_test = X_test.astype ('float32')
     return X_test, y_test
 
-# def slideWindowMulti(train, test, n_lags, n_var):
-#     """
-#     Separa os dados de treinamento e teste
-#     parametro train: dados de treinamento
-#     parametro test: dados de teste
-#     """
-#     X_train = []
-#     y_train = []
-#     X_test = []
-#     y_test = []
-
-#     start = int(n_var*n_lags)
-#     for i in range(n_lags, len(train), n_var):
-#     # for i in range(start, len(train), n_var):
-#         X_train.append(train[i-n_lags:i])
-#         y_train.append(train[i+n_var-1])
-#     for i in range(n_lags, len(test), n_var):
-#     # for i in range(start, len(train), n_var):
-#         X_test.append(test[i-n_lags:i])
-#         y_test.append(test[i+n_var-1])
-#     X_train, y_train = np.array(X_train), np.array(y_train)
-#     X_train = np.reshape(X_train,(X_train.shape[0],X_train.shape[1],1))
-#     X_test, y_test = np.array(X_test), np.array(y_test)
-#     X_test = np.reshape(X_test,(X_test.shape[0],X_test.shape[1],1))
-#     return X_train, y_train, X_test, y_test
-
 def slideWindowMulti_val(series, n_lags, n_var):
     """
     Slide window para dados de validação
@@ -421,9 +392,9 @@ def slideWindowMulti_val(series, n_lags, n_var):
     X_test = []
     y_test = []
     # for i in range(n_lags, len(series)):
-    for i in range(n_lags, len(series), n_var):
-        X_test.append(series[i-n_lags:i])
-        y_test.append(series[i])
+    for i in range(((n_var*n_lags)), len(series)-n_var+1, n_var):
+        X_test.append(series[i-(n_var*n_lags):i])
+        y_test.append(series[i+n_var-1])
         # y_test.append(series[i+n_var-1])
     X_test, y_test = np.array(X_test), np.array(y_test)
     X_test = np.reshape(X_test,(X_test.shape[0],X_test.shape[1],1))
@@ -469,11 +440,16 @@ def predictModelMulti(series, model, n_previsoes, n_lags, n_var, scaler):
     yhat = np.zeros((y_test.shape[0],n_previsoes))
     rmse = []
     mape = []
+    # print(f'predictModelMulti')
+    # print(f'n_var = {n_var}, n_lags = {n_lags}, len(test) = {len(X_test)}, n_previsoes = {n_previsoes}')
     for i in range(len(X_test)):
+    # for i in range(len(X_test)-n_var+1):
         X = X_test[i,:,0].reshape((1, X_test.shape[1], X_test.shape[2]))
         for j in range(n_previsoes):
+            # print(f'i, j = {i}, {j}')
             yhat[i,j] = model.predict(X, verbose=0)
-            X = np.insert(X,n_lags,yhat[i,j],axis=1) 
+            # X = np.insert(X,n_lags,yhat[i,j],axis=1)
+            X = np.insert(X,n_var*n_lags,yhat[i,j],axis=1)
             X = np.delete(X,0,axis=1)
     yhat = scaler.inverse_transform(yhat)
     y_test = scaler.inverse_transform(y_test)
