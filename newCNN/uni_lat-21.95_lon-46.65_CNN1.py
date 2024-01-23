@@ -10,6 +10,7 @@ from scipy import stats
 import warnings
 # from google.colab import files
 warnings.filterwarnings("ignore")
+import time
 
 def get_search_dataset(dataset):
     df1 = pd.read_csv(dataset, sep=',') # 7305 registros
@@ -33,15 +34,22 @@ def form_data(data, t):
 
 star_CNN1 = {'filters': 1, 'pool': 0, 'pool_size': 3, 'dropout': 0.012594059561340142, 'norm': 1, 'lags': 4, 'num_conv': 1, 'kernel_size': 3, 'rmse': 0.7696852129001718, 'num_param': 449}
 
+print(f'[uni_lat-21.95_lon-46.65.py]\n')
+print(f'Getting dataset...')
 u_row_train, u_row_test = get_search_dataset('uni_lat-21.95_lon-46.65.csv')
+print(f'...OK!\n')
 
 u_results_CNN1 = []
 u_train, u_test, u_scaler = es.get_dados(star_CNN1, u_row_train, u_row_test)
 X_train, y_train, X_test, y_test = basic.slideWindow(u_train, u_test, star_CNN1['lags'])
+start = time.time()
 for i in range(5):
-	model,_ = basic.modelo_CNN1(X_train, y_train, star_CNN1)
-	rmse, yhat, y_test = basic.predictModel(u_test, model, 10, star_CNN1['lags'], scaler=u_scaler)
-	u_results_CNN1.append(rmse)
-
+    model,_ = basic.modelo_CNN1(X_train, y_train, star_CNN1)
+    rmse, yhat, y_test = basic.predictModel(u_test, model, 10, star_CNN1['lags'], scaler=u_scaler)
+    u_results_CNN1.append(rmse)
+    print(f'{i+1}:')
+    
+stop = time.time()
 u_results_CNN1 = form_data(u_results_CNN1, '1 (ETo)')
 u_results_CNN1.to_csv('u_results_CNN1.csv',index=True)
+print(f'Done! Execution time = {stop - start} s.')

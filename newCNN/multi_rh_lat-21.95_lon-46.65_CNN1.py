@@ -10,6 +10,7 @@ from scipy import stats
 import warnings
 # from google.colab import files
 warnings.filterwarnings("ignore")
+import time
 
 def get_search_dataset_multivariate(dataset, n_var):
     df1 = pd.read_csv(dataset, sep=',') # 7305 registros
@@ -33,16 +34,25 @@ def form_data(data, t):
 
 star_CNN1 = {'filters': 1, 'pool': 0, 'pool_size': 3, 'dropout': 0.012594059561340142, 'norm': 1, 'lags': 4, 'num_conv': 1, 'kernel_size': 3, 'rmse': 0.7696852129001718, 'num_param': 449}
 
+print(f'[multi_rh_lat-21.95_lon-46.65.py]')
+print(f'Getting dataset...')
 m_row_train, m_row_test = get_search_dataset_multivariate('multi_rh_lat-21.95_lon-46.65.csv', n_var=2)
+print(f'...OK!')
 
 m_rh_results_CNN1 = []
 n_var = 2
 m_train, m_test, m_scaler = es.get_dados(star_CNN1, m_row_train, m_row_test)
 X_train, y_train, X_test, y_test = basic.slideWindowMulti(m_train, m_test, n_lags=star_CNN1['lags'], n_var=n_var)
+
+start = time.time()
 for i in range(5):
-  model,_ = basic.modelo_CNN1(X_train, y_train, star_CNN1) 
-  rmse, yhat, y_test = basic.predictModelMulti(m_test, model, n_previsoes=10, n_lags=star_CNN1['lags'], n_var=n_var, scaler=m_scaler)
-  m_rh_results_CNN1.append(rmse)
+    print(f'{i+1}')
+    model,_ = basic.modelo_CNN1(X_train, y_train, star_CNN1)
+    rmse, yhat, y_test = basic.predictModelMulti(m_test, model, n_previsoes=10, n_lags=star_CNN1['lags'], n_var=n_var, scaler=m_scaler)
+    m_rh_results_CNN1.append(rmse)
 
 m_rh_results_CNN1 = form_data(m_rh_results_CNN1, '1 (RH, ETo)')
 m_rh_results_CNN1.to_csv('m_rh_results_CNN1.csv',index=True)
+stop = time.time()
+
+print(f'Done! Execution time = {stop - start}')

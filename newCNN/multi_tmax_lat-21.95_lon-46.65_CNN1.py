@@ -34,24 +34,23 @@ def form_data(data, t):
 
 star_CNN1 = {'filters': 1, 'pool': 0, 'pool_size': 3, 'dropout': 0.012594059561340142, 'norm': 1, 'lags': 4, 'num_conv': 1, 'kernel_size': 3, 'rmse': 0.7696852129001718, 'num_param': 449}
 
-print(f'[multi_u2_lat-21.95_lon-46.65.py]')
+print(f'[multi_tmax_lat-21.95_lon-46.65.py]\n')
 print(f'Getting dataset...')
-m_row_train, m_row_test = get_search_dataset_multivariate('multi_u2_lat-21.95_lon-46.65.csv', n_var=2)
+m_row_train, m_row_test = get_search_dataset_multivariate('multi_tmax_lat-21.95_lon-46.65.csv', n_var=2)
 print(f'...OK!\n')
 
-m_u2_results_CNN1 = []
+m_tmax_results_CNN1 = []
 n_var = 2
 m_train, m_test, m_scaler = es.get_dados(star_CNN1, m_row_train, m_row_test)
 X_train, y_train, X_test, y_test = basic.slideWindowMulti(m_train, m_test, n_lags=star_CNN1['lags'], n_var=n_var)
-
 start = time.time()
 for i in range(5):
     model,_ = basic.modelo_CNN1(X_train, y_train, star_CNN1)
     rmse, yhat, y_test = basic.predictModelMulti(m_test, model, n_previsoes=10, n_lags=star_CNN1['lags'], n_var=n_var, scaler=m_scaler)
-    m_u2_results_CNN1.append(rmse)
-    print(f'{i+1}')
+    m_tmax_results_CNN1.append(rmse)
+    print(f'{i+1}:')
 stop = time.time()
 
-m_u2_results_CNN1 = form_data(m_u2_results_CNN1, '1 (u2, ETo)')
-m_u2_results_CNN1.to_csv('m_u2_results_CNN1.csv',index=True)
-print(f'Done! Execution time = {stop - start} s.')
+m_tmax_results_CNN1 = form_data(m_tmax_results_CNN1, '1 (Tmax, ETo)')
+m_tmax_results_CNN1.to_csv('m_tmax_results_CNN1.csv',index=True)
+print(f'Done! Exeution time = {stop - start} s.')
