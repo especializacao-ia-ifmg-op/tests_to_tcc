@@ -1,4 +1,4 @@
-# Time series forecasting with ensemble of convolutional neural networks
+# Multivariate Time series forecasting with convolutional neural networks
 
 *Paper: Reference evapotranspiration time series forecasting with ensemble of convolutional neural networks.* [[Link](https://www.sciencedirect.com/science/article/abs/pii/S016816992031262X)]
 
