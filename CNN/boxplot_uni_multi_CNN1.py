@@ -5,37 +5,37 @@ from scipy import stats
 import warnings
 warnings.filterwarnings("ignore")
 
-u_CNN1 = pd.read_csv('u_results_CNN1.csv',delimiter=',')
+u_CNN1 = pd.read_csv('./results/u_results_CNN1.csv',delimiter=',')
 u_CNN1 = u_CNN1[u_CNN1['Unnamed: 0'].isin([0,2,6,9])]
 
 # u_CNN1_1 = pd.read_csv('u_results_CNN1_1',delimiter=',')
 # u_CNN1_1 = u_CNN1_1[u_CNN1_1['Unnamed: 0'].isin([0,2,6,9])]
 
-m_rs_CNN1 = pd.read_csv('m_rs_results_CNN1.csv',delimiter=',')
+m_rs_CNN1 = pd.read_csv('./results/m_rs_results_CNN1.csv',delimiter=',')
 m_rs_CNN1 = m_rs_CNN1[m_rs_CNN1['Unnamed: 0'].isin([0,2,6,9])]
 
-m_u2_CNN1 = pd.read_csv('m_u2_results_CNN1.csv',delimiter=',')
+m_u2_CNN1 = pd.read_csv('./results/m_u2_results_CNN1.csv',delimiter=',')
 m_u2_CNN1 = m_u2_CNN1[m_u2_CNN1['Unnamed: 0'].isin([0,2,6,9])]
 
-m_rh_CNN1 = pd.read_csv('m_rh_results_CNN1.csv',delimiter=',')
+m_rh_CNN1 = pd.read_csv('./results/m_rh_results_CNN1.csv',delimiter=',')
 m_rh_CNN1 = m_rh_CNN1[m_rh_CNN1['Unnamed: 0'].isin([0,2,6,9])]
 
-m_tmax_CNN1 = pd.read_csv('m_tmax_results_CNN1.csv',delimiter=',')
+m_tmax_CNN1 = pd.read_csv('./results/m_tmax_results_CNN1.csv',delimiter=',')
 m_tmax_CNN1 = m_tmax_CNN1[m_tmax_CNN1['Unnamed: 0'].isin([0,2,6,9])]
 
-m_tmin_CNN1 = pd.read_csv('m_tmin_results_CNN1.csv',delimiter=',')
+m_tmin_CNN1 = pd.read_csv('./results/m_tmin_results_CNN1.csv',delimiter=',')
 m_tmin_CNN1 = m_tmin_CNN1[m_tmin_CNN1['Unnamed: 0'].isin([0,2,6,9])]
 
-m_pr_CNN1 = pd.read_csv('m_pr_results_CNN1.csv',delimiter=',')
+m_pr_CNN1 = pd.read_csv('./results/m_pr_results_CNN1.csv',delimiter=',')
 m_pr_CNN1 = m_pr_CNN1[m_pr_CNN1['Unnamed: 0'].isin([0,2,6,9])]
 
-m_rs_u2_CNN1 = pd.read_csv('m_rs_u2_results_CNN1.csv',delimiter=',')
+m_rs_u2_CNN1 = pd.read_csv('./results/m_rs_u2_results_CNN1.csv',delimiter=',')
 m_rs_u2_CNN1 = m_rs_u2_CNN1[m_rs_u2_CNN1['Unnamed: 0'].isin([0,2,6,9])]
 
-m_u2_tmax_CNN1 = pd.read_csv('m_u2_tmax_results_CNN1.csv',delimiter=',')
-m_u2_tmax_CNN1 = m_u2_tmax_CNN1[m_u2_tmax_CNN1['Unnamed: 0'].isin([0,2,6,9])]
+# m_u2_tmax_CNN1 = pd.read_csv('./results/m_u2_tmax_results_CNN1.csv',delimiter=',')
+# m_u2_tmax_CNN1 = m_u2_tmax_CNN1[m_u2_tmax_CNN1['Unnamed: 0'].isin([0,2,6,9])]
 
-frames = [u_CNN1, m_rs_CNN1, m_u2_CNN1, m_rh_CNN1, m_tmax_CNN1, m_tmin_CNN1, m_pr_CNN1, m_rs_u2_CNN1, m_u2_tmax_CNN1]
+frames = [u_CNN1, m_rs_CNN1, m_u2_CNN1, m_rh_CNN1, m_tmax_CNN1, m_tmin_CNN1, m_pr_CNN1, m_rs_u2_CNN1]#, m_u2_tmax_CNN1]
 result = pd.concat(frames, ignore_index=True)
 result['Unnamed: 0'] = result['Unnamed: 0'] + 1
 # print(result.head(50))
