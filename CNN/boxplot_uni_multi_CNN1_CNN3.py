@@ -52,5 +52,5 @@ plt.tick_params(labelsize=12)
 labels = ['1','3','7','10']
 plt.xlabel("Horizontes de previsão", fontsize=14)
 plt.ylabel("RMSE", fontsize=14)
-plt.savefig('boxplot_uni_multi.png', dpi=300)
+plt.savefig('boxplot_uni_multi_CNN1_CNN3.png', dpi=300)
 plt.show()
