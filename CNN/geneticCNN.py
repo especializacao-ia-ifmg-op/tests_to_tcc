@@ -19,7 +19,8 @@ from sklearn.neighbors import KernelDensity
 
 import tensorflow as tf
 from tensorflow import keras
-from keras.models import Sequential, Model, Input
+from keras.models import Sequential, Model#, Input
+from keras.layers import Input
 from keras.constraints import max_norm, unit_norm
 from keras.layers import Dense, Flatten, SpatialDropout1D, Activation, Add, BatchNormalization, Conv1D, MaxPooling1D
 from keras import regularizers
@@ -34,6 +35,7 @@ from matplotlib import pyplot as plt
 import seaborn
 # from CNN import basic
 import basic
+import Ensemble as es
 
 def initial_population(n, cnn):
     """
@@ -58,7 +60,8 @@ def random_CNN1():
     random.randint(2, 5), #tamanho da janela de pooling [2,3,4,5] 
     random.uniform(0.5, 0.8),  # porcentagem dropout
     random.randint(0, 1),   # normalização (0 - sim, 1 - não)
-    random.randint(2, 200),   # quantidade de lags
+    # random.randint(2, 200),   # quantidade de lags <---- Comentei essa linha e diminuí o valor máximo do range (linha abaixo).
+    random.randint(2, 10),   # quantidade de lags
     random.randint(1, 6), # número de camadas convolucionais
     random.randint(0, 3), # tamanho do kernel de convolução
     [], #RMSE de teste do modelo
@@ -337,6 +340,59 @@ def evaluation(individual, cnn, series, epocas):
         train = series[train_index].values
         test = series[test_index].values
         X_train, y_train, X_test, y_test = basic.slideWindow(train, test, individual['lags'])
+        
+        if cnn == 'CNN1':
+            model, history  = modelo_CNN1(X_train, y_train, X_test, y_test, individual, epocas)
+        elif cnn == 'CNN2':
+            model, history  = modelo_CNN2(X_train, y_train, X_test, y_test, individual, epocas)
+        else:
+            model, history  = modelo_CNN3(X_train, y_train, X_test, y_test, individual, epocas)
+        results.append(np.sqrt(history.history['val_loss'][-1]))
+        i = i+d
+
+    rmse = np.nanmean(results)
+    num_param = model.count_params()
+      
+    return num_param, rmse
+
+def evaluationMulti(individual, cnn, dataframe, epocas, n_var): # Preciso alterar para receber um dataframe no lugar de uma série
+    """
+    Avalia os indivíduos da população
+    :parametro individual: indivíduo da população
+    :parametro cnn: tipo da rede
+    :parametro series: base de dados
+    :return: número de parâmetros do modelo e a média do rmse
+    """
+    windows_size=.5
+    train_size=.7
+    w = int(len(dataframe) * windows_size)
+    d = int(.2 * w)
+    X_train = []
+    y_train = []
+    X_test = []
+    y_test = []
+    i=0
+  
+    if individual['filters'] == 0: 
+        filters = 16
+    elif individual['filters'] == 1:
+        filters = 32
+    else:
+        filters = 64
+
+    results = []
+    
+    while i < w:
+        series = dataframe.iloc[:,1:n_var+1]
+        # train_index = (series[i:i+int(w*train_size)].index.values.astype(int)) # Os índices podem ser associados aos índices de qualquer série do dataframe
+        # test_index = (series[i+int(w*train_size):w+i].index.values.astype(int))
+        train = series[i:i+int(w*train_size)] # O conjunto de valores precisa considerar todas as séries do dataframe. Talvez dê pra fazer como é feito get_search_dataset_multi!!!
+        test = series[i+int(w*train_size):w+i]
+        train, test, scaler = es.get_dados(individual, train, test) # Será que individual é igual a star???
+        # print(f'\t[evaluationMulti]: train.shape = {train.shape}, test.shape = {test.shape}')
+        # print(f'\t[evaluationMulti]: i = {i}, w = {w}')
+        X_train, y_train, X_test, y_test = basic.slideWindowMulti(train, test, individual['lags'], n_var)
+        # print(f'\t[evaluationMulti]: nlags = {individual["lags"]}')
         
         if cnn == 'CNN1':
             model, history  = modelo_CNN1(X_train, y_train, X_test, y_test, individual, epocas)
@@ -645,6 +701,97 @@ def genetic(ngen, npop, pcruz, pmut, dataset, cnn, epocas):
             new_populacao.append(filho22)
       
         res = list(map(evaluation, populacao, repeat(cnn), repeat(dataset), repeat(epocas)))
+        for i in range(len(res)):
+            new_populacao[i]['num_param'],new_populacao[i]['rmse'] = res[i]
+
+        populacao = elitism(populacao, new_populacao)
+        _best = populacao[0]
+
+        melhor_rmse.append(_best['rmse'])
+        media_rmse.append(sum([k['rmse'] for k in populacao])/len(populacao))
+        melhor_len_lags.append(_best['num_param'])
+        media_len_lags.append(sum([k['num_param'] for k in populacao])/len(populacao))
+
+        new_populacao = []
+    
+        pl.subplot(121)
+        h1, = pl.plot(melhor_rmse, c='blue', label='Best RMSE')
+        h2, = pl.plot(media_rmse, c='cyan', label='Mean RMSE')
+        pl.title("RMSE")
+        pl.legend([h1, h2],['Best','Mean'])
+
+        pl.subplot(122)
+        h3, = pl.plot(melhor_len_lags, c='red', label='Best Número de parâmetros')
+        h4, = pl.plot(media_len_lags, c='orange', label='Mean Número de parâmetros')
+        pl.title("Número de parâmetros")
+        pl.legend([h3, h4],['Best','Mean'])
+
+        #display.clear_output(wait=True)
+        display.display(pl.gcf())
+
+    melhorT = sorted(populacao, key=lambda item: item['rmse'])[0]
+
+    return melhorT
+
+def geneticMulti(ngen, npop, pcruz, pmut, dataset, cnn, epocas, nvar):
+    """
+    Executa o AG
+    :parametro ngen: número de gerações
+    :parametro npop: número de indivíduos da população
+    :parametro pcruz: probabilidade de cruzamento
+    :parametro pmut: probabilidade de mutação
+    :parametro cnn: string para escolha do tipo de rede ('CNN1', 'CNN2', 'CNN3')
+    """
+    fig = pl.gcf()
+    fig.set_size_inches(15, 5)
+    fig, ax = plt.subplots(nrows=1, ncols=1,figsize=[15,5])
+    new_populacao = []
+    populacao = initial_population(npop, cnn)
+    melhor_rmse = []
+    media_rmse = []
+    melhor_len_lags = []
+    media_len_lags = []
+
+    res = list(map(evaluationMulti, populacao, repeat(cnn), repeat(dataset), repeat(epocas), repeat(nvar)))
+    for i in range(len(res)):
+        populacao[i]['num_param'],populacao[i]['rmse'] = res[i]
+
+    for i in range(ngen):
+        # print(f'\t[geneticMulti]: ngen = {i}\n')
+        for j in range(int(npop/2)):
+            pais = []
+            pais.append(selection(populacao))
+            pais.append(selection(populacao))
+
+            rnd1 = random.uniform(0,1)
+            rnd2 = random.uniform(0,1)
+            if cnn == 'CNN1':
+                filho1 = crossover_CNN1(pais) if pcruz > rnd1 else pais[0]
+                filho2 = crossover_CNN1(pais) if pcruz > rnd2 else pais[1]
+            elif cnn == 'CNN2':
+                filho1 = crossover_CNN2(pais) if pcruz > rnd1 else pais[0]
+                filho2 = crossover_CNN2(pais) if pcruz > rnd2 else pais[1]
+            else:
+                filho1 = crossover_CNN3(pais) if pcruz > rnd1 else pais[0]
+                filho2 = crossover_CNN3(pais) if pcruz > rnd2 else pais[1]
+            
+
+            rnd1 = random.uniform(0,1)
+            rnd2 = random.uniform(0,1)
+            if cnn == 'CNN1':
+                filho11 = mutation_CNN1(filho1) if pmut > rnd1 else filho1
+                filho22 = mutation_CNN1(filho2) if pmut > rnd2 else filho2
+            elif cnn == 'CNN2':
+                filho11 = mutation_CNN2(filho1) if pmut > rnd1 else filho1
+                filho22 = mutation_CNN2(filho2) if pmut > rnd2 else filho2
+            else:
+                filho11 = mutation_CNN3(filho1) if pmut > rnd1 else filho1
+                filho22 = mutation_CNN3(filho2) if pmut > rnd2 else filho2
+
+            new_populacao.append(filho11)
+            new_populacao.append(filho22)
+      
+        res = list(map(evaluationMulti, populacao, repeat(cnn), repeat(dataset), repeat(epocas), repeat(nvar)))
         for i in range(len(res)):
             new_populacao[i]['num_param'],new_populacao[i]['rmse'] = res[i]
 

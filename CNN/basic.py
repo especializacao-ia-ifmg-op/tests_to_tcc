@@ -214,6 +214,8 @@ def slideWindowMulti(train, test, n_lags, n_var):
     X_test = []
     y_test = []
 
+    # print(f'\t[slideWindowMulti]: train.shape = {train.shape}, test.shape = {test.shape}')
+
     for i in range((n_var*n_lags), len(train)-n_var+1, n_var):
         X_train.append(train[i-(n_var*n_lags):i])
         y_train.append(train[i+n_var-1])
